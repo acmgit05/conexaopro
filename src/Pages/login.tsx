@@ -1,7 +1,7 @@
+import { loginAluno } from '../services/auth'
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Logo } from '../componentes/Logo';
-import { supabase } from '../lib/supabase'; // Importa a nossa conexão real
 
 export default function Login() {
   console.log("Login carregado");
@@ -24,23 +24,16 @@ export default function Login() {
     }
 
     try {
-      // 🔍 Busca o aluno direto na tabela do Supabase por matrícula e data
-      const { data, error } = await supabase
-        .from('alunos')
-        .select('*')
-        .eq('matricula', matricula.trim())
-        .eq('data_nascimento', dataNascimento)
-        .single();
+      // 🔑 Agora usamos o Supabase Auth
+      await loginAluno(matricula.trim(), dataNascimento);
 
-      if (error || !data) {
-        setErro('Matrícula ou Data de Nascimento não cadastrada.');
-      } else {
-        // Se achou, salva o nome do aluno logado na memória para usar no feed
-        localStorage.setItem('@conexaopro:usuario', JSON.stringify(data));
-        navigate('/feed'); // Pula para o Feed!
-      }
-    } catch (err) {
-      setErro('Erro ao conectar ao banco de dados. Tente novamente.');
+      // Se deu certo, podemos salvar algo no localStorage
+      localStorage.setItem('@conexaopro:usuario', matricula);
+
+      // Redireciona para o feed
+      navigate('/feed');
+    } catch (err: any) {
+      setErro('Matrícula ou Data de Nascimento inválida.');
     } finally {
       setCarregando(false);
     }
@@ -48,8 +41,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 font-sans">
-      {/* <Logo /> */}
-
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
         <div className="flex flex-col items-center justify-center">
           <Logo />
@@ -64,6 +55,7 @@ export default function Login() {
             </div>
           )}
 
+          {/* Campos continuam iguais */}
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Matrícula ou ID Aluno</label>
@@ -101,11 +93,6 @@ export default function Login() {
             </button>
           </div>
         </form>
-
-        <div className="mt-8 pt-4 border-t border-slate-100 flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-          <span>Desenvolvido pela Turma de Frontend</span>
-          <span className="text-[#004A7F]">Firjan SENAI</span>
-        </div>
       </div>
     </div>
   );
